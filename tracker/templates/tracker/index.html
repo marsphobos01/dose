@@ -1,0 +1,81 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl p-6 space-y-6">
+    <div class="space-y-1">
+        <h1 class="text-2xl font-semibold">Welcome to Dose!</h1>
+        <h2 class="text-lg text-muted-foreground">Dashboard</h2>
+    </div>
+    {% for med in meds %}
+    <article class="card">
+        <header class="flex items-center">
+            <div>
+                <h2>{{ med.name }}</h2>
+                <p>{{ med.dosage }}{{ med.unit }}</p>
+            </div>
+            <div class="flex gap-2 ml-auto">
+                <a href="{% url 'tracker:view_med' med.id %}" class="btn btn-secondary btn-sm">View</a>
+                <button type="button" onclick="document.getElementById('edit-dialog-{{ med.id }}').showModal()" class="btn btn-secondary btn-sm">Edit</button>
+                <form method="POST" action="{% url 'tracker:delete_med' med.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline btn-sm-icon text-destructive hover:text-destructive"
+                            onclick="return confirm('Delete {{ med.name }}?')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <section class="flex items-center justify-between">
+            <div class="flex flex-col gap-1">
+                <p class="text-sm">{{ med.daily_amount }} Tablet{% if med.daily_amount > 1 %}s{% endif %} per day</p>
+                <p class="text-sm text-muted-foreground">{{ med.total_amount }} Tablet{% if med.total_amount > 1 %}s{% endif %} remaining</p>
+            </div>
+            <div class="flex gap-2 items-center">
+                <kbd class="kbd">{{ med.start_date }}</kbd>
+                <kbd class="kbd {% if med.is_expired %}text-destructive{% elif med.is_expiring_soon %}text-destructive/70{% endif %}">
+                    Expires {{ med.expiration_date }}
+                </kbd>
+            </div>
+        </section>
+        <footer>
+            <p class="text-sm text-muted-foreground">{{ med.notes }}</p>
+        </footer>
+    </article>
+
+    <dialog id="edit-dialog-{{ med.id }}" class="dialog w-full sm:max-w-lg"
+            aria-labelledby="edit-title-{{ med.id }}"
+            onclick="if (event.target === this) this.close()">
+        <div>
+            <header>
+                <h2 id="edit-title-{{ med.id }}">Edit {{ med.name }}</h2>
+                <p>Make changes and click save when done.</p>
+            </header>
+            <section>
+                <form id="edit-form-{{ med.id }}" method="POST" action="{% url 'tracker:edit_med' med.id %}" class="form grid gap-4">
+                    {% csrf_token %}
+                    <div class="grid gap-2">
+                        <label class="label" for="name-{{ med.id }}">Name</label>
+                        <input class="input" type="text" id="name-{{ med.id }}" name="name" value="{{ med.name }}" />
+                    </div>
+                    <div class="grid gap-2">
+                        <label class="label" for="dosage-{{ med.id }}">Dosage</label>
+                        <input class="input" type="number" id="dosage-{{ med.id }}" name="dosage" value="{{ med.dosage }}" />
+                    </div>
+                    <div class="grid gap-2">
+                        <label class="label" for="notes-{{ med.id }}">Notes</label>
+                        <textarea class="textarea" id="notes-{{ med.id }}" name="notes">{{ med.notes }}</textarea>
+                    </div>
+                </form>
+            </section>
+            <footer>
+                <button class="btn btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+                <button class="btn" form="edit-form-{{ med.id }}" type="submit">Save changes</button>
+            </footer>
+            <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </dialog>
+    {% endfor %}
+</div>
+{% endblock %}
