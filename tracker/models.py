@@ -1,9 +1,13 @@
 from django.db import models
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.utils import timezone
 from django.contrib.auth.models import User
 
 # Create your models here.
+
+def default_time_taken():
+    return timezone.make_aware(datetime(2000, 1, 1))
+
 
 class Med(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -15,7 +19,7 @@ class Med(models.Model):
     start_date = models.DateField(null=True,blank=True)
     expiration_date = models.DateField(null=True,blank=True)
     notes = models.TextField(null=True,blank=True)
-    time_taken = models.DateTimeField(default='2000-01-01 00:00:00')
+    time_taken = models.DateTimeField(default=default_time_taken)
 
     def __str__(self):
         return f"{self.id} - {self.name}, {self.dosage}{self.unit}"
@@ -44,5 +48,5 @@ class Med(models.Model):
     def mark_taken(self):
         if self.can_take:
             self.time_taken = timezone.now()
-            self.total_amount
-            self.save(update_fields=["time_taken"])
+            self.total_amount = max(self.total_amount - self.daily_amount, 0)
+            self.save(update_fields=["time_taken", "total_amount"])
